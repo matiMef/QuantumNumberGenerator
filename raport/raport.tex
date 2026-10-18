@@ -1,0 +1,60 @@
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{subcaption}
+
+\title{Zaawansowane techniki optymalizacji kwantowej [P] \\
+\vspace{0.3cm}
+\large Generowanie liczb losowych}
+\author{Mateusz Buchczyk, Remigiusz Szmyt}
+
+\begin{document}
+\maketitle
+\newpage
+\section{Cel i zakres projektu}
+\subsection{Cel projektu}
+Celem projektu jest implementacja algorytmu generowania kwantowych liczb losowych oraz wybór odpowiednich metod statystycznych w celu odpowidniej oceny proponowanego rozwiązania.
+\subsection{Zakres projektu}
+Prace projektowe obejmują przygotowanie algorytmu kwantowego generowania liczb losowych, implementację algorytmu CSPRNG w celach porównawczych, uruchomienie docelowego algorytmu kwantowego na komputerze kwantowym oraz wybór metod badawczych i przeprowadzenie testów statystycznych.
+\section{Różne sposoby generowania liczb losowych}
+\subsection{Pseudolosowy (PRNG)}
+Algorytmy PRNG są oparte na prostych i wielokrotnych operacjach matematycznych takich jak przestawianie, mnożenie, xorowanie. Są to algorytmy deterministyczne oparte o tzw. ziarno, czyli punkt startowy dla algorytmu.
+Są to algorytmy deterministyczne, ponieważ znając ziarno, jesteśmy w stanie odtworzyć tą samą sekwencje liczb za każdym razem. Algorytmy z tej grupy są również okresowe, po wykonaniu odpowiedniej ilości kroków, zostaje wygenerowany
+identyczny ciąg liczbowy. Z wyżej wymienionych powodów, algorytmy te nie nadają się,
+do tworzenia bezpiecznych kombinacji czy generowania haseł. Ich główne zastosowanie to generowanie terenu, symulacje komputerowe lub wykorzystanie dla AI w grach komputerowych, ze względu na ich niski koszt obliczeniowy oraz
+prostotę implementacji.
+\subsection{Pseudolosowy kryptograficznie bezpieczny (CSPRNG)}
+Algorytmy CSPRNG (\textit{Cryptographically Secure Pseudo-Random Number Generator}) opierają się na zbliżonej zasadzie matematycznej co PRNG, jednak cechują się wysokie wymogami dotyczącymi nieprzewidywalności oraz odporności na atak. Podstawową cechą CSPRNG jest to, że nawet przy znajomości części wygenerowanego ciągu nie da się w wielomianowym czasie obliczeniowym przewidzieć kolejnego bitu ani odtworzyć stanów poprzednich.
+CSPRNG wykazują wyższy koszt obliczeniowy niż zwykłe PRNG, lecz są znacznie szybsze od sprzętowych źródeł entropii. Wykorzystuje się je powszechnie do generowania kluczy kryptograficznych, tokenów sesyjnych, wektorów inicjalizacyjnych (IV) oraz soli. W bezpiecznych systemach CSPRNG są regularnie dokarmiane (ang. \textit{re-seeded}) prawdziwą entropią pochodzącą z urządzeń sprzętowych, co zapobiega odtworzeniu stanu ciągu w przypadku jego wycieku.
+\subsection{Sprzętowy (TRNG)}
+Generatory TRNG (\textit{True Random Number Generator}) nie są algorytmami, lecz urządzeniami sprzętowymi, których wysokie bezpieczeństwo wynika bezpośrednio z nieliniowych i stochastycznych praw fizyki. Operują one na wysokiej entropii, pozyskiwanej z naturalnych zjawisk chaotycznych, takich jak szum termiczny (szum Johnsona-Nyquista), fluktuacje napięcia czy inne zjawiska kwantowo-mechaniczne w strukturach półprzewodnikowych. We współczesnych procesorach i układach SoC standardem stało się umieszczanie dedykowanych komponentów sprzętowych (np. instrukcji \textit{RDRAND}), które stale zbierają szum informacyjny.
+Dostęp do tak pozyskiwanej entropii jest zarządzany przez jądro systemu operacyjnego, które integruje surowy szum sprzętowy w wewnętrznych pulach entropii. Ze względu na fakt, że generowane ciągi nie są oparte na żadnym deterministycznym modelu matematycznym, odtworzenie lub przewidzenie sekwencji przez atakującego jest fizycznie niemożliwe (wymagałoby idealnego odwzorowania unikalnych, mikroskopowych warunków środowiskowych i sprzętowych). Z tego powodu TRNG stanowią fundamentalną warstwę bezpieczeństwa w najbardziej rygorystycznych systemach kryptograficznych.
+\subsection{Kwantowy (QRNG)}
+Generatory QRNG (\textit{Quantum Random Number Generator}) uznawane są za najbezpieczniejsze ze wszystkich omówionych dotychczas rozwiązań. Nie opierają się one ani na algorytmach deterministycznych (jak PRNG czy CSPRNG), ani na klasycznych, makroskopowych procesach fizycznych, które w teorii mogłyby zostać zmierzone lub zakłócone z zewnątrz (jak w TRNG). Działanie QRNG opiera się na fundamentalnych prawach mechaniki kwantowej, a w szczególności na zjawisku superpozycji i redukcji (kolapsu) funkcji falowej podczas pomiaru. Przykładowo, jeśli foton zostanie przygotowany w stanie superpozycji, akt jego detekcji (np. przepuszczenie przez polaryzator lub zwierciadło półprzepuszczalne) daje dokładnie 50\% szans na zarejestrowanie go w stanie logicznym 0 lub 1. Ponieważ ten wynik nie jest determinowany przez żaden ukryty stan wewnętrzny, generowane ciągi bitów są matematycznie i fizycznie losowe. Z tego względu QRNG stanowią szczytowe osiągnięcie w dziedzinie pozyskiwania entropii, wykorzystywane w najbardziej wymagających systemach bezpieczeństwa, kryptografii kwantowej (QKD) oraz kluczowych instytucjach finansowych.
+\section{Wybrane technologie i metryki statystyczne}
+\subsection{Technologia}
+Wybraną technologią implementacji programów jest język Python z wykorzystaniem biblioteki Qiskit, która pozwala na tworzenie zaawansowanych obwodów kwantowych oraz na łatwą integrację z komputerami kwantowymi IBM.
+\subsection{Testy statystyczne}
+\begin{itemize}
+    \item Wielokrotne generowanie liczb z zakresu 0 oraz 1, z podziałem na liczbę wywołań (QPRNG symulator, QPRNG IBM, CSPRNG)
+    \item Test serii (QPRNG symulator, CSPRNG)
+    \item Rozkład statystyczny 10000 oraz 100000 liczb (QPRNG symulator, CSPRNG)
+    \item Test chi-kwadrat (QPRNG symulator, QPRNG IBM, CSPRNG)
+    \item Porównanie szumów kwantowych symulatora i prawdziwego komputera IBM (QPRNG symulator, QPRNG IBM)
+\end{itemize}
+\section{Opis generatora kwantowego}
+\section{Opis programu}
+\section{Analiza problemu badawczego i wyników}
+\section{Podsumowanie}
+\section{Źródła}
+\begin{itemize}
+    \item Generowanie Liczb Losowych [Prezentacja] - Mateusz Buchczyk, Remigiusz Szmyt
+\end{itemize}
+\end{document}
