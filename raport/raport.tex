@@ -52,9 +52,9 @@ Wybraną technologią implementacji programów jest język Python z wykorzystani
 \end{itemize}
 \section{Opis generatora kwantowego}
 Uzyskanie losowej wartości z QRNG wymaga odczytania wartości kubitu wprowadzonego w stan superpozycji. Aby tego dokonać, na każdym kubicie należy zastosować bramkę Hadamarda, a następnie wykonać pomiar w bazie obliczeniowej. Z tego powodu wielkość generowanej liczby w bitach jest ograniczona przez liczbę aktualnie dostępnych kubitów w układzie fizycznym. W celu generowania większych liczb lub ciągów o dowolnej długości stosuje się podejście iteracyjne (podejście krokowe) polegające na wielokrotnym odczycie obwodu i sklejaniu uzyskanych wyników bitowych.
-Podstawowym elementem tworzącym stan superpozycji z bazowego stanu $|0\rangle$ jest jednokubitowa \textbf{bramka Hadamarda ($H$)}. Jej macierzowa reprezentacja w bazie obliczeniowej ma postać:
+Podstawowym elementem tworzącym stan superpozycji z bazowych stanów $|0\rangle$ lub $|1\rangle$ jest jednokubitowa \textbf{bramka Hadamarda ($H$)}. Jej macierzowa reprezentacja w bazie obliczeniowej ma postać:
 $$H = \frac{1}{\sqrt{2}} \begin{bmatrix} 1 & 1 \\ 1 & -1 \end{bmatrix}$$
-"Dodać opis bramki H"
+Działanie bramki Hadamarda H dla wektorów bazowych (stanów bazowych), oblicza się, mnożąc macierz H przez wektory bazy.
 \section{Opis programu}
 \section{Analiza problemu badawczego i wyników}
 \section{Podsumowanie}
