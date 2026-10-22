@@ -1,30 +1,25 @@
 from qiskit import QuantumCircuit
 from qiskit.primitives import StatevectorSampler
 
-qc = QuantumCircuit(1)
-qc2 = QuantumCircuit(1)
-qc3 = QuantumCircuit(1)
-qc4 = QuantumCircuit(1)
-qc5 = QuantumCircuit(1)
-qc.h(0)
-qc2.h(0)
-qc3.h(0)
-qc4.h(0)
-qc5.h(0)
-qc.measure_all()
-qc2.measure_all()
-qc3.measure_all()
-qc4.measure_all()
-qc5.measure_all()
+def generate_dynamic_circuit(n_qubits: int):
+    qc = QuantumCircuit(n_qubits)
+    for n in range(n_qubits):
+        qc.h(n)
+    return qc
 
-sampler = StatevectorSampler()
-result = sampler.run([qc], shots=100000).result()
-result2 = sampler.run([qc2], shots=100000).result()
-result3 = sampler.run([qc3], shots=100000).result()
-result4 = sampler.run([qc4], shots=100000).result()
-result5 = sampler.run([qc5], shots=100000).result()
-print(result[0].data.meas.get_counts())
-print(result2[0].data.meas.get_counts())
-print(result3[0].data.meas.get_counts())
-print(result4[0].data.meas.get_counts())
-print(result5[0].data.meas.get_counts())
+def get_results(qc: QuantumCircuit, n_shots: int):
+    sampler = StatevectorSampler()
+    result = sampler.run([qc], shots=n_shots).result()
+    return result
+
+def generate_and_measure(n_qubits: int, n_shots: int):
+    dqc = generate_dynamic_circuit(n_qubits)
+    dqc.measure_all()
+    results = get_results(dqc, n_shots)
+    return results
+
+results = generate_and_measure(1, 1000)
+print(results[0].data.meas.get_counts())
+bitstrings = results[0].data.meas.get_bitstrings()
+bitstrings = [int(b, 2) for b in bitstrings]
+print(bitstrings)
