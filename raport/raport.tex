@@ -44,11 +44,10 @@ Generatory QRNG (\textit{Quantum Random Number Generator}) uznawane są za najbe
 Wybraną technologią implementacji programów jest język Python z wykorzystaniem biblioteki Qiskit, która pozwala na tworzenie zaawansowanych obwodów kwantowych oraz na łatwą integrację z komputerami kwantowymi IBM.
 \subsection{Testy statystyczne}
 \begin{itemize}
-    \item Wielokrotne generowanie liczb z zakresu 0 oraz 1, z podziałem na liczbę wywołań (QRNG symulator, QPRNG IBM, CSPRNG)
+    \item Wielokrotne generowanie liczb z zakresu 0 oraz 1, z podziałem na liczbę wywołań (QRNG symulator, QRNG IBM, CSPRNG)
     \item Test serii (QRNG symulator, CSPRNG)
     \item Rozkład statystyczny 10000 oraz 100000 liczb (QRNG symulator, CSPRNG)
     \item Test chi-kwadrat (QRNG symulator, QPRNG IBM, CSPRNG)
-    \item Porównanie szumów kwantowych symulatora i prawdziwego komputera IBM (QRNG symulator, QPRNG IBM)
 \end{itemize}
 \section{Opis generatora kwantowego}
 Uzyskanie losowej wartości z QRNG wymaga odczytania wartości kubitu wprowadzonego w stan superpozycji. Aby tego dokonać, na każdym kubicie należy zastosować bramkę Hadamarda, a następnie wykonać pomiar w bazie obliczeniowej. Z tego powodu wielkość generowanej liczby w bitach jest ograniczona przez liczbę aktualnie dostępnych kubitów w układzie fizycznym. W celu generowania większych liczb lub ciągów o dowolnej długości stosuje się podejście iteracyjne (podejście krokowe) polegające na wielokrotnym odczycie obwodu i sklejaniu uzyskanych wyników bitowych.
