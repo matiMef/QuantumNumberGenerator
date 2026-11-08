@@ -32,6 +32,12 @@ def generate_and_measure(n_qubits: int, n_shots: int) -> list[str]:
     results = get_results(dqc, n_shots)
     return results
 
+def generate_and_measure_ibm(n_qubits: int, n_shots: int, backend_name: str = None):
+    qc = generate_dynamic_circuit(n_qubits)
+    qc.measure_all()
+    res = get_results_from_ibm(qc, n_shots, backend_name)
+    return res
+
 def bitstrings_to_numbers(results: list[str]) -> list[int]:
     bitstrings = results[0].data.meas.get_bitstrings()
     numbers = [int(b, 2) for b in bitstrings]
@@ -72,7 +78,7 @@ def sample_test(n_bits: int, tests: list[int]):
 
 def statictical_distribution(n_bits: int, tests: list[int]):
     results = sample_test(n_bits, tests)
-    print(results)
+    return results
 
 def run_test(tests: list[int]):
     all_test_results = []
@@ -98,6 +104,21 @@ def run_test(tests: list[int]):
         all_test_results.append(runs)
         
     return all_test_results
+
+def run_test_csprng(n_shots: int):
+    result_list = generate_csprng_numbers(1, n_shots)
+    runs = []
+    current_len = 1
+    
+    for i in range(1, len(result_list)):
+        if result_list[i] == result_list[i - 1]:
+            current_len += 1
+        else:
+            runs.append({'number': str(result_list[i - 1]), 'length': current_len})
+            current_len = 1
+            
+    runs.append({'number': str(result_list[-1]), 'length': current_len})
+    return runs
 
 def chi_square_test_for_csprng(n_qubits: int, n_shots: int, alpha: float = 0.05):
     numbers = generate_csprng_numbers(n_qubits, n_shots)
@@ -158,71 +179,185 @@ def chi_square_test_for_quantum_rng(n_qubits: int, n_shots: int, alpha: float = 
 # =========================== Tests =============================
 
 # =========================== Plots =============================
-def plot_statistical_distribution(n_bits: int, shots: int):
-    res = generate_and_measure(n_bits, shots)
-    counts = res[0].data.meas.get_counts()
-    num_states = 2**n_bits
-    states = [format(i, f'0{n_bits}b') for i in range(num_states)]
-    frequencies = [counts.get(s, 0) for s in states]
+def count_zeros_and_ones_test(n_shots: int):
+    # QRNG (1 kubit)
+    qrng_numbers = bitstrings_to_numbers(generate_and_measure(1, n_shots))
+    qrng_counts = Counter(qrng_numbers)
     
-    plt.figure(figsize=(10, 5))
-    plt.bar(states, frequencies, color='skyblue', edgecolor='black')
-    plt.xlabel('Stan')
-    plt.ylabel('Liczba zliczeń')
-    plt.title(f'Rozkład statystyczny QRNG Symulator ({shots} prób, {n_bits} bitów)')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig('qrng_sim_distribution.png')
-    plt.close()
+    # CSPRNG (1 bit, zakres 0-1)
+    csprng_numbers = generate_csprng_numbers(1, n_shots)
+    csprng_counts = Counter(csprng_numbers)
+    
+    results = {
+        'qrng': {0: qrng_counts.get(0, 0), 1: qrng_counts.get(1, 0)},
+        'csprng': {0: csprng_counts.get(0, 0), 1: csprng_counts.get(1, 0)}
+    }
+    
+    print(f"\n--- TEST ZLICZANIA ZER I JEDYNEK ({n_shots} prób) ---")
+    print(f"QRNG Symulator -> 0: {results['qrng'][0]}, 1: {results['qrng'][1]}")
+    print(f"CSPRNG         -> 0: {results['csprng'][0]}, 1: {results['csprng'][1]}")
+    
+    return results
 
-def plot_csprng_distribution(n_bits: int, shots: int):
-    numbers = generate_csprng_numbers(n_bits, shots)
-    counts = Counter(numbers)
+def plot_statistical_distribution(n_bits: int, tests: list[int]):
+    results_list = statictical_distribution(n_bits, tests)
     num_states = 2**n_bits
     states = [format(i, f'0{n_bits}b') for i in range(num_states)]
-    frequencies = [counts.get(i, 0) for i in range(num_states)]
     
-    plt.figure(figsize=(10, 5))
-    plt.bar(states, frequencies, color='salmon', edgecolor='black')
-    plt.xlabel('Wartość')
-    plt.ylabel('Liczba zliczeń')
-    plt.title(f'Rozkład statystyczny CSPRNG ({shots} prób, {n_bits} bitów)')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig('csprng_distribution.png')
-    plt.close()
+    for idx, shots in enumerate(tests):
+        counts = results_list[idx]
+        frequencies = [counts.get(s, 0) for s in states]
+        
+        plt.figure(figsize=(10, 5))
+        plt.bar(states, frequencies, color='skyblue', edgecolor='black')
+        plt.xlabel('Stan')
+        plt.ylabel('Liczba zliczeń')
+        plt.title(f'Rozkład statystyczny QRNG Symulator ({shots} prób, {n_bits} bitów)')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.savefig(f'results/qrng_sim_distribution_{shots}.png')
+        plt.close()
+
+def plot_csprng_distribution(n_bits: int, tests: list[int]):
+    num_states = 2**n_bits
+    states = [format(i, f'0{n_bits}b') for i in range(num_states)]
+    
+    for shots in tests:
+        numbers = generate_csprng_numbers(n_bits, shots)
+        counts = Counter(numbers)
+        frequencies = [counts.get(i, 0) for i in range(num_states)]
+        
+        plt.figure(figsize=(10, 5))
+        plt.bar(states, frequencies, color='salmon', edgecolor='black')
+        plt.xlabel('Wartość')
+        plt.ylabel('Liczba zliczeń')
+        plt.title(f'Rozkład statystyczny CSPRNG ({shots} prób, {n_bits} bitów)')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.savefig(f'results/csprng_distribution_{shots}.png')
+        plt.close()
 
 def plot_runs_test_results(test_shots: int):
     runs_data = run_test([test_shots])[0]
     lengths = [r['length'] for r in runs_data]
-    max_len = max(lengths)
+    max_len = max(lengths) if lengths else 1
     
     plt.figure(figsize=(8, 5))
     plt.hist(lengths, bins=range(1, max_len + 2), align='left', color='lightgreen', edgecolor='black')
     plt.xlabel('Długość serii')
     plt.ylabel('Częstotliwość występowania')
-    plt.title(f'Histogram długości serii (Test serii, {test_shots} prób)')
+    plt.title(f'Histogram długości serii (Test serii QRNG, {test_shots} prób)')
     plt.xticks(range(1, max_len + 1))
     plt.tight_layout()
-    plt.savefig('runs_test_histogram.png')
+    plt.savefig('results/runs_test_histogram_qrng.png')
+    plt.close()
+
+def plot_csprng_runs_test_results(test_shots: int):
+    runs_data = run_test_csprng(test_shots)
+    lengths = [r['length'] for r in runs_data]
+    max_len = max(lengths) if lengths else 1
+    
+    plt.figure(figsize=(8, 5))
+    plt.hist(lengths, bins=range(1, max_len + 2), align='left', color='orange', edgecolor='black')
+    plt.xlabel('Długość serii')
+    plt.ylabel('Częstotliwość występowania')
+    plt.title(f'Histogram długości serii (Test serii CSPRNG, {test_shots} prób)')
+    plt.xticks(range(1, max_len + 1))
+    plt.tight_layout()
+    plt.savefig('results/runs_test_histogram_csprng.png')
+    plt.close()
+
+def plot_zeros_and_ones_results(test_shots: int):
+    test_data = count_zeros_and_ones_test(test_shots)
+    
+    labels = ['0', '1']
+    
+    qrng_vals = [test_data['qrng'][0], test_data['qrng'][1]]
+    plt.figure(figsize=(6, 5))
+    plt.bar(labels, qrng_vals, color=['skyblue', 'deepskyblue'], edgecolor='black')
+    plt.xlabel('Wartość bitu')
+    plt.ylabel('Liczba zliczeń')
+    plt.title(f'Zliczenia 0 i 1 - QRNG Symulator ({test_shots} prób)')
+    plt.tight_layout()
+    plt.savefig('results/zeros_ones_qrng.png')
+    plt.close()
+    
+    csprng_vals = [test_data['csprng'][0], test_data['csprng'][1]]
+    plt.figure(figsize=(6, 5))
+    plt.bar(labels, csprng_vals, color=['salmon', 'darksalmon'], edgecolor='black')
+    plt.xlabel('Wartość bitu')
+    plt.ylabel('Liczba zliczeń')
+    plt.title(f'Zliczenia 0 i 1 - CSPRNG ({test_shots} prób)')
+    plt.tight_layout()
+    plt.savefig('results/zeros_ones_csprng.png')
+    plt.close()
+
+def plot_ibm_statistical_distribution(n_bits: int, tests: list[int], backend_name: str = None):
+    num_states = 2**n_bits
+    states = [format(i, f'0{n_bits}b') for i in range(num_states)]
+    
+    for shots in tests:
+        res = generate_and_measure_ibm(n_bits, shots, backend_name)
+        counts = res[0].data.meas.get_counts()
+        frequencies = [counts.get(s, 0) for s in states]
+        
+        plt.figure(figsize=(10, 5))
+        plt.bar(states, frequencies, color='purple', edgecolor='black')
+        plt.xlabel('Stan')
+        plt.ylabel('Liczba zliczeń')
+        plt.title(f'Rozkład statystyczny IBM QRNG ({shots} prób, {n_bits} bitów)')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.savefig(f'results/ibm_qrng_distribution_{shots}.png')
+        plt.close()
+
+def plot_ibm_zeros_and_ones_results(test_shots: int, backend_name: str = None):
+    res = generate_and_measure_ibm(1, test_shots, backend_name)
+    counts = res[0].data.meas.get_counts()
+    
+    val_0 = counts.get('0', 0)
+    val_1 = counts.get('1', 0)
+    
+    labels = ['0', '1']
+    vals = [val_0, val_1]
+    
+    plt.figure(figsize=(6, 5))
+    plt.bar(labels, vals, color=['mediumpurple', 'rebeccapurple'], edgecolor='black')
+    plt.xlabel('Wartość bitu')
+    plt.ylabel('Liczba zliczeń')
+    plt.title(f'Zliczenia 0 i 1 - IBM QRNG ({test_shots} prób)')
+    plt.tight_layout()
+    plt.savefig('results/ibm_zeros_ones.png')
     plt.close()
 # =========================== Plots =============================
 
 def main():
     print("Uruchamianie testów i generowanie wykresów...")
     
-    chi_square_test_for_quantum_rng(n_qubits=4, n_shots=10000, sim=True)
-    chi_square_test_for_csprng(n_qubits=4, n_shots=10000)
+    test_variants = [10000, 100000, 1000000]
+    n_bits = 4
     
-    statictical_distribution(4, [10000, 100000])
-    plot_statistical_distribution(4, 10000)
-    plot_csprng_distribution(4, 10000)
+    # 1. Test Chi-kwadrat
+    print("\n[--- TESTY CHI-KWADRAT ---]")
+    chi_square_test_for_quantum_rng(n_qubits=n_bits, n_shots=10000, sim=True)
+    chi_square_test_for_csprng(n_qubits=n_bits, n_shots=10000)
+
+    # 2. Rozkład statystyczny 10000 oraz 100000 liczb
+    print("\n[--- ROZKŁADY STATYSTYCZNE I WIELOKROTNE GENEROWANIE ---]")
+    plot_statistical_distribution(n_bits, test_variants)
+    plot_csprng_distribution(n_bits, test_variants)
     
+    # 3. Test serii
+    print("\n[--- TEST SERII ---]")
     print(run_test([1000]))
     plot_runs_test_results(1000)
+    plot_csprng_runs_test_results(1000)
     
-    print("Zakończono pomyślnie.")
+    # 4. Nowy test zliczania zera i jedynek (zakres 0 i 1)
+    print("\n[--- TEST ZLICZANIA ZER I JEDYNEK ---]")
+    plot_zeros_and_ones_results(10000)
+    
+    print("\nZakończono pomyślnie.")
 
 if __name__ == "__main__":
     main()
-    
